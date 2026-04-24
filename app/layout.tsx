@@ -15,7 +15,7 @@ const bebas = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "Gourou Style Landing",
+  title: "Sizzle Style Landing",
   description: "Animated Indian food restaurant style landing page",
 };
 
@@ -36,7 +36,7 @@ export default function RootLayout({
               href="/"
               className="mr-2 font-[family-name:var(--font-bebas)] text-4xl uppercase leading-none text-[#f00]"
             >
-              gourou
+              sizzle
             </Link>
             <Link
               href="/"

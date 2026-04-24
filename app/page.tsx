@@ -81,7 +81,7 @@ export default function Home() {
       <header className="w-full bg-[#f4ead5] px-3 pt-3 text-[#f00] md:px-6">
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="font-[family-name:var(--font-bebas)] text-4xl uppercase leading-none tracking-tight">
-            gourou
+            sizzle
           </p>
           <div className="hidden items-center gap-2 md:flex">
             {appMenu.map((item) => (
@@ -103,11 +103,11 @@ export default function Home() {
         </div>
 
         <div className="grid gap-2 md:grid-cols-2">
-          <div className="h-36 bg-[linear-gradient(120deg,#032e9d_0%,#1d4ed8_42%,#facc15_42%,#facc15_48%,#dc2626_48%,#ef4444_100%)] md:h-48" />
+          <div className="h-36 border border-[#f00] bg-[#1034b8] md:h-48" />
           <motion.div
-            className="h-36 bg-[radial-gradient(circle_at_30%_20%,#ffd18a_0%,#f97316_42%,#8b1a1a_100%)] md:h-48"
-            animate={{ backgroundPosition: ["0% 0%", "100% 50%", "0% 0%"] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="h-36 border border-[#f00] bg-[#f59e0b] md:h-48"
+            animate={{ opacity: [1, 0.82, 1] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
 
@@ -116,7 +116,7 @@ export default function Home() {
             indian food company
           </h1>
           <div className="mt-2 grid gap-2 text-[11px] uppercase tracking-[0.08em] text-[#1034b8] md:grid-cols-[1.3fr_1fr_auto_auto_auto] md:items-start">
-            <p className="font-extrabold leading-tight">At Gourou, your Indian restaurant in Paris</p>
+            <p className="font-extrabold leading-tight">At Sizzle, your Indian restaurant in Paris</p>
             <p className="text-[9px] leading-[1.35]">Fresh prep, bold sauces, and street food classics served all day.</p>
             <Link href="/menu" className="border border-[#1034b8] px-3 py-1 font-extrabold">Food List</Link>
             <Link href="/menu" className="border border-[#1034b8] px-3 py-1 font-extrabold">Menu</Link>
@@ -139,7 +139,7 @@ export default function Home() {
         </section>
 
         <section className="relative overflow-hidden border-b-2 border-[#f00] bg-[#dc2626] p-2">
-          <div className="h-52 bg-[linear-gradient(180deg,#a16207_0%,#6b21a8_0%,#111827_42%,#1f2937_100%)] md:h-72" />
+          <div className="h-52 border border-[#f00] bg-[#1f2937] md:h-72" />
           <motion.div
             className="absolute bottom-6 left-0 h-14 w-28 bg-black"
             animate={{ x: ["-10%", "110%"] }}
@@ -147,7 +147,7 @@ export default function Home() {
           />
         </section>
 
-        <section className="bg-[radial-gradient(circle,#f00_0.2%,transparent_0.22%)] [background-size:8px_8px] px-4 py-20 text-center md:py-24">
+        <section className="bg-[#fff4de] px-4 py-20 text-center md:py-24">
           <motion.h2
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -157,7 +157,7 @@ export default function Home() {
             homemade Indian cuisine, fresh and generous
           </motion.h2>
           <p className="mx-auto mt-3 max-w-md text-[10px] uppercase tracking-[0.1em] text-[#111]">
-            At Gourou, everything is prepared in-house with fresh ingredients and vibrant vegetarian and comfort-forward recipes.
+            At Sizzle, everything is prepared in-house with fresh ingredients and vibrant vegetarian and comfort-forward recipes.
           </p>
           <div className="mt-4 flex justify-center gap-2">
             <button className="border border-[#f00] bg-[#f00] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#fff3d8]">The Restaurant</button>
@@ -166,7 +166,7 @@ export default function Home() {
         </section>
 
         <section className="grid border-y-2 border-[#f00] md:grid-cols-[2fr_1fr]">
-          <div className="h-56 bg-[linear-gradient(140deg,#f59e0b_0%,#ef4444_45%,#1d4ed8_100%)] md:h-80" />
+          <div className="h-56 border-r border-[#f00] bg-[#f59e0b] md:h-80" />
           <div className="bg-[#1034b8] p-4 text-right text-[#fff4de]">
             <p className="font-[family-name:var(--font-bebas)] text-4xl uppercase leading-none">We are hiring</p>
             <p className="mt-2 text-[11px] uppercase leading-tight">
@@ -217,7 +217,7 @@ export default function Home() {
             >
               <p className="font-[family-name:var(--font-bebas)] text-2xl uppercase leading-none">{tile.label}</p>
               <h3 className="mt-1 font-[family-name:var(--font-bebas)] text-[2.05rem] uppercase leading-[0.85]">{tile.title}</h3>
-              <div className="my-3 h-20 rounded-full border-4 border-current bg-[radial-gradient(circle_at_30%_20%,#fff2cf_0%,#ffe08a_30%,#f97316_100%)]" />
+              <div className="my-3 h-20 rounded-full border-4 border-current bg-[#fff4de]" />
               <p className="text-[10px] uppercase leading-tight">{tile.note}</p>
             </motion.article>
           ))}
@@ -229,15 +229,15 @@ export default function Home() {
           </h2>
           <div className="mt-2 grid gap-2 md:grid-cols-4">
             <article className="border border-[#f00] bg-[#fef3c7] p-2">
-              <div className="h-24 bg-[linear-gradient(135deg,#1d4ed8_0%,#facc15_60%,#111827_100%)]" />
+              <div className="h-24 border border-[#f00] bg-[#1034b8]" />
               <p className="mt-2 font-extrabold uppercase">Matchbox Set</p>
             </article>
             <article className="border border-[#f00] bg-[#dcfce7] p-2">
-              <div className="h-24 bg-[linear-gradient(135deg,#15803d_0%,#4ade80_50%,#14532d_100%)]" />
-              <p className="mt-2 font-extrabold uppercase">T-shirt Gourou</p>
+              <div className="h-24 border border-[#f00] bg-[#15803d]" />
+              <p className="mt-2 font-extrabold uppercase">T-shirt Sizzle</p>
             </article>
             <article className="border border-[#f00] bg-[#dbeafe] p-2">
-              <div className="h-24 bg-[linear-gradient(135deg,#1e3a8a_0%,#60a5fa_70%,#1d4ed8_100%)]" />
+              <div className="h-24 border border-[#f00] bg-[#1e3a8a]" />
               <p className="mt-2 font-extrabold uppercase">Poster series</p>
             </article>
             <article className="border border-[#f00] bg-[#1034b8] p-2 text-[#fff4de]">
@@ -265,7 +265,7 @@ export default function Home() {
             </div>
             <div className="border border-[#fef3d8] bg-[#1d4ed8] p-4">
               <p className="font-[family-name:var(--font-bebas)] text-5xl uppercase leading-none text-[#d9f99d]">palak paneer</p>
-              <div className="mt-3 h-28 rounded-full border-4 border-[#fff4de] bg-[radial-gradient(circle_at_40%_30%,#fef9c3_0%,#86efac_38%,#166534_100%)]" />
+              <div className="mt-3 h-28 rounded-full border-4 border-[#fff4de] bg-[#16a34a]" />
             </div>
             <div className="grid min-h-52 place-items-center border border-[#fef3d8] bg-[#ef4444]">
               <p className="font-[family-name:var(--font-bebas)] text-7xl uppercase leading-none tracking-tight [writing-mode:vertical-rl]">bhel</p>
@@ -273,7 +273,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer id="contact" className="bg-[radial-gradient(circle,#f00_0.18%,transparent_0.2%)] [background-size:10px_10px] px-4 py-20 text-center text-[#f00]">
+        <footer id="contact" className="bg-[#fff4de] px-4 py-20 text-center text-[#f00]">
           <h2 className="font-[family-name:var(--font-bebas)] text-[clamp(3rem,9vw,7rem)] uppercase leading-[0.88]">Indian Food Company</h2>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             <Link href="/menu" className="border border-[#f00] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em]">Reserve</Link>
