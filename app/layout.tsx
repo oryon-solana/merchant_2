@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Manrope } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -29,7 +30,7 @@ export default function RootLayout({
       className={`${manrope.variable} ${bebas.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#f7ebd7] text-[#1b140e] font-[family-name:var(--font-manrope)]">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

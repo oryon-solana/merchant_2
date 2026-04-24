@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { useAuth } from "./context/AuthContext";
 
 const tiles = [
   {
@@ -68,9 +70,9 @@ const tiles = [
   },
 ];
 
-const appMenu = ["Menu", "Rewards/Redeem", "Profile"];
-
 export default function Home() {
+  const { user, logout } = useAuth();
+
   return (
     <div className="pb-24 md:pb-8">
       <header className="mx-auto w-full max-w-[1200px] border-x border-[#f00] border-opacity-30 bg-[#f4ead5] px-3 pt-3 text-[#f00] md:px-6">
@@ -79,17 +81,17 @@ export default function Home() {
             gourou
           </p>
           <div className="hidden items-center gap-2 md:flex">
-            {appMenu.map((item) => (
-              <button
-                key={item}
-                className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]"
-              >
-                {item}
-              </button>
-            ))}
-            <button className="border border-[#f00] bg-[#f00] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#fef3d8]">
-              Order
-            </button>
+            <Link href="/shop" className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]">Menu</Link>
+            <Link href="/rewards" className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]">Rewards</Link>
+            {user ? (
+              <>
+                <Link href="/orders" className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]">Orders</Link>
+                <button onClick={logout} className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]">Logout</button>
+              </>
+            ) : (
+              <Link href="/login" className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]">Sign In</Link>
+            )}
+            <Link href="/shop" className="border border-[#f00] bg-[#f00] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#fef3d8]">Order</Link>
           </div>
         </div>
 
@@ -109,9 +111,9 @@ export default function Home() {
           <div className="mt-2 grid gap-2 text-[11px] uppercase tracking-[0.08em] text-[#1034b8] md:grid-cols-[1.3fr_1fr_auto_auto_auto] md:items-start">
             <p className="font-extrabold leading-tight">At Gourou, your Indian restaurant in Paris</p>
             <p className="text-[9px] leading-[1.35]">Fresh prep, bold sauces, and street food classics served all day.</p>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Food List</button>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Menu</button>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Shop</button>
+            <Link href="/shop" className="border border-[#1034b8] px-3 py-1 font-extrabold">Food List</Link>
+            <Link href="/shop" className="border border-[#1034b8] px-3 py-1 font-extrabold">Menu</Link>
+            <Link href="/shop" className="border border-[#1034b8] px-3 py-1 font-extrabold">Shop</Link>
           </div>
         </div>
       </header>
@@ -252,28 +254,28 @@ export default function Home() {
       <nav className="fixed inset-x-3 bottom-3 z-50 rounded-3xl border border-[#e2d2b3] bg-white/95 p-2 shadow-[0_14px_32px_rgba(0,0,0,0.28)] backdrop-blur md:hidden">
         <ul className="grid grid-cols-4 items-end text-center">
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href="/shop" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">☰</span>
               <span className="text-[10px] font-extrabold uppercase">Menu</span>
-            </button>
+            </Link>
           </li>
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href="/rewards" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">★</span>
-              <span className="text-[10px] font-extrabold uppercase leading-tight">Rewards Redeem</span>
-            </button>
+              <span className="text-[10px] font-extrabold uppercase leading-tight">Rewards</span>
+            </Link>
           </li>
           <li>
-            <button className="-mt-7 flex h-16 w-full flex-col items-center justify-center rounded-2xl bg-[#f00] text-[#fff4de] shadow-[0_10px_24px_rgba(255,0,0,0.45)]">
+            <Link href="/shop" className="-mt-7 flex h-16 w-full flex-col items-center justify-center rounded-2xl bg-[#f00] text-[#fff4de] shadow-[0_10px_24px_rgba(255,0,0,0.45)]">
               <span className="text-lg">🛍</span>
               <span className="text-[10px] font-extrabold uppercase">Order</span>
-            </button>
+            </Link>
           </li>
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href={user ? "/orders" : "/login"} className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">👤</span>
               <span className="text-[10px] font-extrabold uppercase">Profile</span>
-            </button>
+            </Link>
           </li>
         </ul>
       </nav>
