@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const tiles = [
   {
@@ -68,28 +69,36 @@ const tiles = [
   },
 ];
 
-const appMenu = ["Menu", "Rewards/Redeem", "Profile"];
+const appMenu = [
+  { label: "Menu", href: "/menu" },
+  { label: "Rewards/Redeem", href: "/rewards" },
+  { label: "Profile", href: "/profile" },
+];
 
 export default function Home() {
   return (
     <div className="pb-24 md:pb-8">
-      <header className="mx-auto w-full max-w-[1200px] border-x border-[#f00] border-opacity-30 bg-[#f4ead5] px-3 pt-3 text-[#f00] md:px-6">
+      <header className="w-full bg-[#f4ead5] px-3 pt-3 text-[#f00] md:px-6">
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="font-[family-name:var(--font-bebas)] text-4xl uppercase leading-none tracking-tight">
             gourou
           </p>
           <div className="hidden items-center gap-2 md:flex">
             {appMenu.map((item) => (
-              <button
-                key={item}
+              <Link
+                key={item.label}
+                href={item.href}
                 className="border border-[#1034b8] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1034b8]"
               >
-                {item}
-              </button>
+                {item.label}
+              </Link>
             ))}
-            <button className="border border-[#f00] bg-[#f00] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#fef3d8]">
+            <Link
+              href="/menu"
+              className="border border-[#f00] bg-[#f00] px-4 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#fef3d8]"
+            >
               Order
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -109,14 +118,14 @@ export default function Home() {
           <div className="mt-2 grid gap-2 text-[11px] uppercase tracking-[0.08em] text-[#1034b8] md:grid-cols-[1.3fr_1fr_auto_auto_auto] md:items-start">
             <p className="font-extrabold leading-tight">At Gourou, your Indian restaurant in Paris</p>
             <p className="text-[9px] leading-[1.35]">Fresh prep, bold sauces, and street food classics served all day.</p>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Food List</button>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Menu</button>
-            <button className="border border-[#1034b8] px-3 py-1 font-extrabold">Shop</button>
+            <Link href="/menu" className="border border-[#1034b8] px-3 py-1 font-extrabold">Food List</Link>
+            <Link href="/menu" className="border border-[#1034b8] px-3 py-1 font-extrabold">Menu</Link>
+            <Link href="/rewards" className="border border-[#1034b8] px-3 py-1 font-extrabold">Points Deals</Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] border-x border-[#f00] border-opacity-30 bg-[#f4ead5]">
+      <main className="w-full bg-[#f4ead5]">
         <section className="border-y-2 border-[#f00] bg-[#fff4de] py-2">
           <motion.div
             className="flex w-max whitespace-nowrap pl-2 font-[family-name:var(--font-bebas)] text-[clamp(2.3rem,7vw,5rem)] uppercase leading-none tracking-tight text-[#f00]"
@@ -163,6 +172,33 @@ export default function Home() {
             <p className="mt-2 text-[11px] uppercase leading-tight">
               kitchen and floor roles, motivated, energetic, and curious people.
             </p>
+          </div>
+        </section>
+
+        <section className="border-b-2 border-[#f00] bg-[#fff4de] p-4 md:p-6">
+          <div className="grid gap-4 md:grid-cols-[1.2fr_auto] md:items-center">
+            <div>
+              <p className="font-[family-name:var(--font-bebas)] text-[clamp(2.2rem,5vw,4rem)] uppercase leading-[0.85] text-[#f00]">
+                Redeem your points for deals
+              </p>
+              <p className="mt-2 max-w-xl text-sm font-semibold uppercase tracking-[0.08em] text-[#1034b8]">
+                Turn loyalty points into free sides, drinks, and full meal offers.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link
+                href="/rewards"
+                className="border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]"
+              >
+                Redeem now
+              </Link>
+              <Link
+                href="/profile"
+                className="border border-[#1034b8] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]"
+              >
+                View points
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -240,8 +276,8 @@ export default function Home() {
         <footer id="contact" className="bg-[radial-gradient(circle,#f00_0.18%,transparent_0.2%)] [background-size:10px_10px] px-4 py-20 text-center text-[#f00]">
           <h2 className="font-[family-name:var(--font-bebas)] text-[clamp(3rem,9vw,7rem)] uppercase leading-[0.88]">Indian Food Company</h2>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            <button className="border border-[#f00] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em]">Reserve</button>
-            <button className="border border-[#f00] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em]">Takeaway</button>
+            <Link href="/menu" className="border border-[#f00] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em]">Reserve</Link>
+            <Link href="/menu" className="border border-[#f00] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.15em]">Takeaway</Link>
           </div>
           <p className="mx-auto mt-4 max-w-xl text-[10px] uppercase leading-tight tracking-[0.08em] text-[#b91c1c]">
             Address: 42 Rue Leon Frot, 75011 Paris - Open lunch and dinner - Reservation recommended.
@@ -252,28 +288,28 @@ export default function Home() {
       <nav className="fixed inset-x-3 bottom-3 z-50 rounded-3xl border border-[#e2d2b3] bg-white/95 p-2 shadow-[0_14px_32px_rgba(0,0,0,0.28)] backdrop-blur md:hidden">
         <ul className="grid grid-cols-4 items-end text-center">
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href="/menu" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">☰</span>
               <span className="text-[10px] font-extrabold uppercase">Menu</span>
-            </button>
+            </Link>
           </li>
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href="/rewards" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">★</span>
               <span className="text-[10px] font-extrabold uppercase leading-tight">Rewards Redeem</span>
-            </button>
+            </Link>
           </li>
           <li>
-            <button className="-mt-7 flex h-16 w-full flex-col items-center justify-center rounded-2xl bg-[#f00] text-[#fff4de] shadow-[0_10px_24px_rgba(255,0,0,0.45)]">
+            <Link href="/menu" className="-mt-7 flex h-16 w-full flex-col items-center justify-center rounded-2xl bg-[#f00] text-[#fff4de] shadow-[0_10px_24px_rgba(255,0,0,0.45)]">
               <span className="text-lg">🛍</span>
               <span className="text-[10px] font-extrabold uppercase">Order</span>
-            </button>
+            </Link>
           </li>
           <li>
-            <button className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
+            <Link href="/profile" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
               <span className="text-lg">👤</span>
               <span className="text-[10px] font-extrabold uppercase">Profile</span>
-            </button>
+            </Link>
           </li>
         </ul>
       </nav>
