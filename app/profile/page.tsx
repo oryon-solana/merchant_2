@@ -82,15 +82,15 @@ export default function ProfilePage() {
         <article className="border-r border-t border-[#f00] bg-[#fff4de] p-4">
           <h2 className="font-[family-name:var(--font-bebas)] text-4xl uppercase text-[#1034b8]">Basic info</h2>
           <div className="mt-4 grid gap-3">
-            <div>
+            <div className="border border-[#1034b8] bg-white px-3 py-2">
               <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Full name</p>
               <p className="mt-1 text-sm font-semibold text-[#111]">{name}</p>
             </div>
-            <div>
+            <div className="border border-[#1034b8] bg-white px-3 py-2">
               <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Email</p>
               <p className="mt-1 text-sm font-semibold text-[#111]">{email}</p>
             </div>
-            <div>
+            <div className="border border-[#1034b8] bg-white px-3 py-2">
               <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Phone</p>
               <p className="mt-1 text-sm font-semibold text-[#111]">{phone}</p>
             </div>

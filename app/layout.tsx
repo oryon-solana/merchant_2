@@ -7,6 +7,7 @@ import { ScrollEffects } from "./components/ScrollEffects";
 import "./globals.css";
 import "aos/dist/aos.css";
 import "lenis/dist/lenis.css";
+import { AnimatePresence } from "framer-motion";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -81,7 +82,9 @@ export default function RootLayout({
             </div>
           </nav>
         </header>
-        {children}
+        <AnimatePresence mode="wait">
+          {children}
+        </AnimatePresence>
       </body>
     </html>
   );
