@@ -3,6 +3,7 @@
 :root {
   --background: #f7ebd7;
   --foreground: #1b140e;
+  --scroll-y: 0;
 }
 
 @theme inline {
@@ -10,4 +11,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-bebas);
+}
+
+[data-aos] {
+  will-change: transform, opacity;
+}
+
+.parallax-soft {
+  transform: translate3d(0, calc(var(--scroll-y) * -0.03px), 0);
+}
+
+.parallax-mid {
+  transform: translate3d(0, calc(var(--scroll-y) * -0.05px), 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax-soft,
+  .parallax-mid {
+    transform: none;
+  }
+}
+
+@keyframes nav-letter-bounce {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-0.3em);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
