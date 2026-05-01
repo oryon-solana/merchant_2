@@ -1,161 +1,286 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { MaskedLineReveal } from "../components/MaskedLineReveal";
+import { ButtonHoverLabel } from "../components/ButtonHoverLabel";
+import {
+  POINTS_CHANGED_EVENT,
+  getCurrentPoints,
+  getRedeemedDeals,
+  redeemDeal,
+} from "../lib/points";
 
-interface PointTransaction {
-  id: string;
-  points: number;
-  type: "earned" | "redeemed";
-  note: string;
-  created_at: string;
-  order_id: string | null;
-}
+const rewardsDeals = [
+  {
+    id: "buffalo-chicken-wrap",
+    name: "Buffalo Chicken Wrap",
+    details: "Crispy strips, lettuce, pickles, spicy mayo.",
+    points: 450,
+    image: "/menu/buffalo-chicken-wrap.webp",
+  },
+  {
+    id: "value-max-combo",
+    name: "Value Max Combo",
+    details: "Burger, fries, nuggets, and a fountain drink.",
+    points: 560,
+    image: "/menu/value-max-combo.webp",
+  },
+  {
+    id: "loaded-fries",
+    name: "Loaded Fries",
+    details: "Crinkle fries, cheese sauce, bacon bits, jalapenos.",
+    points: 380,
+    image: "/menu/loaded-fries.webp",
+  },
+  {
+    id: "vanilla-mega-shake",
+    name: "Vanilla Mega Shake",
+    details: "Thick vanilla shake with whipped cream and cookie crumbs.",
+    points: 320,
+    image: "/menu/vanilla-mega-shake.webp",
+  },
+];
 
-interface PointsData {
-  total_points: number;
-  last_updated: string | null;
-  history: PointTransaction[];
-}
+type Deal = (typeof rewardsDeals)[number];
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+function formatDateLabel(value: string): string {
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function RewardsPage() {
-  const { user, token, isLoading } = useAuth();
-  const router = useRouter();
-  const [data, setData] = useState<PointsData>({ total_points: 0, last_updated: null, history: [] });
-  const [loading, setLoading] = useState(true);
+  const [currentPoints, setCurrentPoints] = useState(0);
+  const [redeemedDeals, setRedeemedDeals] = useState<Record<string, string>>(
+    {},
+  );
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [isModalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (!user) { router.push("/login"); return; }
-    fetch("/api/points", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, [user, token, isLoading, router]);
+    const sync = () => {
+      setCurrentPoints(getCurrentPoints());
+      const map = Object.fromEntries(
+        getRedeemedDeals().map((deal) => [deal.id, deal.expiresAt]),
+      );
+      setRedeemedDeals(map);
+    };
+
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener(POINTS_CHANGED_EVENT, sync);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(POINTS_CHANGED_EVENT, sync);
+    };
+  }, []);
+
+  const expiryIso = useMemo(() => {
+    if (!selectedDeal) {
+      return "";
+    }
+
+    const next = new Date();
+    next.setDate(next.getDate() + 14);
+    return next.toISOString();
+  }, [selectedDeal]);
+
+  const openRedeemPopup = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setModalOpen(true);
+  };
+
+  const closeRedeemPopup = () => {
+    setModalOpen(false);
+    setSelectedDeal(null);
+  };
+
+  const confirmRedeem = () => {
+    if (!selectedDeal) {
+      return;
+    }
+
+    const result = redeemDeal(selectedDeal.id, selectedDeal.points, expiryIso);
+    if (result.ok) {
+      closeRedeemPopup();
+    }
+  };
+
+  const selectedAlreadyRedeemed = selectedDeal
+    ? Boolean(redeemedDeals[selectedDeal.id])
+    : false;
+  const selectedCanAfford = selectedDeal
+    ? currentPoints >= selectedDeal.points
+    : false;
 
   return (
-    <div className="min-h-screen bg-[#f4ead5] pb-24 md:pb-8">
-      <header className="border-b-2 border-[#f00] border-opacity-40 bg-[#f4ead5] px-4 py-3 flex items-center justify-between sticky top-0 z-40">
-        <Link href="/" className="font-[family-name:var(--font-bebas)] text-3xl uppercase text-[#f00] leading-none">
-          gourou
-        </Link>
-        <div className="flex items-center gap-2">
-          <Link href="/orders" className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#1034b8] border border-[#1034b8] px-2 py-1">
-            Orders
-          </Link>
-          <Link href="/shop" className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#fef3d8] border border-[#f00] bg-[#f00] px-2 py-1">
-            Order
-          </Link>
-        </div>
+    <main className="min-h-screen w-full bg-[#f4ead5] pb-24 md:pb-8">
+      <header className="border-b-2 border-[#f00] p-4 md:p-6">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#1034b8]">
+          Pay with points
+        </p>
+        <h1 className="font-[family-name:var(--font-bebas)] text-[clamp(2.8rem,8vw,6rem)] uppercase leading-[0.85] text-[#f00]">
+          Points Deals Menu
+        </h1>
+        <p className="max-w-2xl text-sm font-semibold uppercase tracking-[0.08em] text-[#1034b8]">
+          Redeem loyalty points for special menu items. No cash payment needed
+          when you have enough points.
+        </p>
+        <p className="mt-3 text-sm font-black uppercase tracking-[0.08em] text-[#f00]">
+          Current points: {currentPoints}
+        </p>
       </header>
 
-      <main className="mx-auto max-w-[640px] px-4 py-8">
-        <h1 className="font-[family-name:var(--font-bebas)] text-[clamp(3rem,8vw,5.5rem)] uppercase leading-none text-[#f00] mb-2">
-          Rewards
-        </h1>
-        <p className="text-[10px] uppercase tracking-[0.1em] text-[#1034b8] mb-8">
-          Earn 1 point per Rp12,000 spent
-        </p>
+      <section className="grid grid-cols-1 border-b-2 border-[#f00] md:grid-cols-2">
+        {rewardsDeals.map((deal, index) => {
+          const redeemedExpiry = redeemedDeals[deal.id];
+          const alreadyRedeemed = Boolean(redeemedExpiry);
 
-        {loading ? (
-          <div className="text-center py-12 text-[11px] uppercase tracking-[0.12em]">Loading…</div>
-        ) : (
-          <>
-            <div className="border-2 border-[#1034b8] bg-[#1034b8] text-[#fff4de] p-6 mb-6">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] opacity-70">Your Balance</p>
-              <p className="font-[family-name:var(--font-bebas)] text-[5rem] leading-none mt-1">
-                {data.total_points}
-              </p>
-              <p className="font-[family-name:var(--font-bebas)] text-2xl uppercase leading-none opacity-70">
-                points
-              </p>
-              {user && (
-                <p className="mt-3 text-[10px] uppercase tracking-[0.1em] opacity-60">
-                  {user.name ?? user.email}
-                </p>
-              )}
-            </div>
+          return (
+            <article
+              key={deal.name}
+              className={`border-r border-t border-[#f00] p-4 ${index % 2 === 0 ? "bg-[#fee2e2]" : "bg-[#fff4de]"}`}
+            >
+              <div className="relative mb-3 h-40 overflow-hidden rounded-lg border-2 border-[#1034b8] md:h-84">
+                <Image
+                  src={deal.image}
+                  alt={deal.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 30vw"
+                  priority={index === 0}
+                />
+              </div>
+              <MaskedLineReveal
+                as="p"
+                lines={[deal.name]}
+                className="font-[family-name:var(--font-bebas)] text-4xl uppercase leading-none text-[#f00]"
+              />
+              <MaskedLineReveal
+                as="p"
+                lines={[deal.details]}
+                className="mt-2 text-xs font-bold uppercase tracking-[0.07em] text-[#1f2937]"
+              />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div>
+                  <MaskedLineReveal
+                    as="p"
+                    lines={[`${deal.points} pts`]}
+                    className="text-lg font-extrabold uppercase text-[#1034b8]"
+                  />
+                  {alreadyRedeemed ? (
+                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#f00]">
+                      Redeemed (expires {formatDateLabel(redeemedExpiry)})
+                    </p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openRedeemPopup(deal)}
+                  disabled={alreadyRedeemed}
+                  className="group inline-flex items-center border border-[#1034b8] bg-[#1034b8] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <ButtonHoverLabel
+                    label={alreadyRedeemed ? "Redeemed" : "Redeem"}
+                    className="leading-none"
+                  />
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </section>
 
-            <div className="border border-[#1034b8] bg-[#eef3ff] px-4 py-3 mb-6">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#1034b8]">
-                How points work
-              </p>
-              <p className="mt-1 text-[11px] text-[#1b140e] leading-relaxed">
-                Earn <strong>1 point</strong> for every <strong>Rp12,000</strong> you spend. Points accumulate with every order.
-              </p>
-            </div>
+      <footer className="flex flex-wrap gap-2 p-4 md:p-6">
+        <Link
+          href="/profile"
+          className="group inline-flex items-center border border-[#1034b8] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]"
+        >
+          <ButtonHoverLabel label="Manage points" />
+        </Link>
+        <Link
+          href="/menu"
+          className="group inline-flex items-center border border-[#f00] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#f00]"
+        >
+          <ButtonHoverLabel label="Pay with money menu" />
+        </Link>
+      </footer>
 
-            <h2 className="font-[family-name:var(--font-bebas)] text-2xl uppercase text-[#1b140e] mb-3">
-              Transaction History
+      {isModalOpen && selectedDeal ? (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4">
+          <div className="w-full max-w-2xl border-2 border-[#f00] bg-[#fff4de] p-5 md:p-8">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]">
+              Redeem confirmation
+            </p>
+            <h2 className="font-(family-name:--font-bebas) text-[clamp(2rem,5vw,3.3rem)] uppercase leading-[0.9] text-[#f00]">
+              {selectedDeal.name}
             </h2>
 
-            {data.history.length === 0 ? (
-              <div className="text-center py-10 border border-[#f00] border-opacity-20 bg-white">
-                <p className="text-[11px] uppercase tracking-[0.1em] text-[#666]">No transactions yet</p>
-                <Link href="/shop" className="mt-3 inline-block border border-[#f00] bg-[#f00] px-4 py-2 text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#fef3d8]">
-                  Start Ordering
-                </Link>
+            <div className="mt-4 grid gap-4 md:grid-cols-[180px_1fr] md:items-start">
+              <div className="relative h-36 overflow-hidden rounded-lg border-2 border-[#1034b8] md:h-44">
+                <Image
+                  src={selectedDeal.image}
+                  alt={selectedDeal.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
-            ) : (
-              <div className="space-y-2">
-                {data.history.map((tx) => (
-                  <div key={tx.id} className="border border-[#f00] border-opacity-20 bg-white px-4 py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#1b140e]">
-                        {tx.note || (tx.type === "earned" ? "Points earned" : "Points redeemed")}
-                      </p>
-                      <p className="text-[9px] uppercase tracking-[0.08em] text-[#666] mt-0.5">
-                        {formatDate(tx.created_at)}
-                        {tx.order_id && (
-                          <> · <Link href={`/orders/${tx.order_id}`} className="text-[#1034b8] underline">Order #{tx.order_id.slice(0, 8).toUpperCase()}</Link></>
-                        )}
-                      </p>
-                    </div>
-                    <span className={`font-[family-name:var(--font-bebas)] text-2xl ${tx.type === "earned" ? "text-[#16a34a]" : "text-[#f00]"}`}>
-                      {tx.type === "earned" ? "+" : "−"}{tx.points}
-                    </span>
-                  </div>
-                ))}
+              <div className="grid gap-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
+                <p>
+                  You have{" "}
+                  <span className="text-[#1034b8]">{currentPoints}</span>{" "}
+                  points.
+                </p>
+                <p>
+                  This reward costs{" "}
+                  <span className="text-[#f00]">{selectedDeal.points}</span>{" "}
+                  points.
+                </p>
+                <p>
+                  Valid until{" "}
+                  <span className="text-[#f00]">
+                    {formatDateLabel(expiryIso)}
+                  </span>
+                  .
+                </p>
+                {selectedAlreadyRedeemed ? (
+                  <p className="text-[#f00]">
+                    This deal has already been redeemed once.
+                  </p>
+                ) : null}
+                {!selectedAlreadyRedeemed && !selectedCanAfford ? (
+                  <p className="text-[#f00]">
+                    Not enough points to redeem this item.
+                  </p>
+                ) : null}
               </div>
-            )}
-          </>
-        )}
-      </main>
+            </div>
 
-      <nav className="fixed inset-x-3 bottom-3 z-50 rounded-3xl border border-[#e2d2b3] bg-white/95 p-2 shadow-[0_14px_32px_rgba(0,0,0,0.28)] backdrop-blur md:hidden">
-        <ul className="grid grid-cols-4 items-end text-center">
-          <li>
-            <Link href="/shop" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
-              <span className="text-lg">☰</span>
-              <span className="text-[10px] font-extrabold uppercase">Menu</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/rewards" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#f00]">
-              <span className="text-lg">★</span>
-              <span className="text-[10px] font-extrabold uppercase leading-tight">Rewards</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/cart" className="-mt-7 flex h-16 w-full flex-col items-center justify-center rounded-2xl bg-[#f00] text-[#fff4de] shadow-[0_10px_24px_rgba(255,0,0,0.45)]">
-              <span className="text-lg">🛍</span>
-              <span className="text-[10px] font-extrabold uppercase">Cart</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/orders" className="flex w-full flex-col items-center gap-1 rounded-xl py-2 text-[#1034b8]">
-              <span className="text-lg">👤</span>
-              <span className="text-[10px] font-extrabold uppercase">Profile</span>
-            </Link>
-          </li>
-        </ul>
-      </nav>
-    </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={confirmRedeem}
+                disabled={selectedAlreadyRedeemed || !selectedCanAfford}
+                className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                <ButtonHoverLabel label="Confirm redeem" />
+              </button>
+              <button
+                type="button"
+                onClick={closeRedeemPopup}
+                className="group inline-flex items-center border border-[#1034b8] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]"
+              >
+                <ButtonHoverLabel label="Cancel" />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </main>
   );
 }
