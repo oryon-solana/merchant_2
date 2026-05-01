@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ButtonHoverLabel } from "../components/ButtonHoverLabel";
+import { isLoggedIn } from "../lib/auth";
+import { DEFAULT_POINTS, POINTS_CHANGED_EVENT, getCurrentPoints } from "../lib/points";
 
 type MerchantRate = {
   name: string;
@@ -16,10 +20,11 @@ const merchantRates: MerchantRate[] = [
 ];
 
 export default function ProfilePage() {
-  const [name, setName] = useState("Rina Patel");
-  const [email, setEmail] = useState("rina@example.com");
-  const [phone, setPhone] = useState("+62 812 0000 1234");
-  const [currentPoints] = useState(1840);
+  const router = useRouter();
+  const [name] = useState("Rina Patel");
+  const [email] = useState("rina@example.com");
+  const [phone] = useState("+62 812 0000 1234");
+  const [currentPoints, setCurrentPoints] = useState(DEFAULT_POINTS);
 
   const [pointsToConvert, setPointsToConvert] = useState(300);
   const [targetMerchant, setTargetMerchant] = useState(merchantRates[0].name);
@@ -37,6 +42,33 @@ export default function ProfilePage() {
     return pointsToConvert * selectedRate.rate;
   }, [pointsToConvert, selectedRate.rate]);
 
+  const loggedIn = isLoggedIn();
+
+  useEffect(() => {
+    if (!loggedIn) {
+      router.replace("/signin");
+    }
+  }, [loggedIn, router]);
+
+  useEffect(() => {
+    const sync = () => {
+      setCurrentPoints(getCurrentPoints());
+    };
+
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener(POINTS_CHANGED_EVENT, sync);
+
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(POINTS_CHANGED_EVENT, sync);
+    };
+  }, []);
+
+  if (!loggedIn) {
+    return null;
+  }
+
   return (
     <main className="min-h-screen w-full bg-[#f4ead5] pb-24 md:pb-8">
       <header className="border-b-2 border-[#f00] p-4 md:p-6">
@@ -48,34 +80,22 @@ export default function ProfilePage() {
 
       <section className="grid gap-0 border-b-2 border-[#f00] md:grid-cols-2">
         <article className="border-r border-t border-[#f00] bg-[#fff4de] p-4">
-          <h2 className="font-[family-name:var(--font-bebas)] text-4xl uppercase text-[#1034b8]">Edit basic info</h2>
+          <h2 className="font-[family-name:var(--font-bebas)] text-4xl uppercase text-[#1034b8]">Basic info</h2>
           <div className="mt-4 grid gap-3">
-            <label className="grid gap-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-              Full name
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="border border-[#1034b8] bg-white px-3 py-2 text-sm font-semibold text-[#111] outline-none focus:ring-2 focus:ring-[#1034b8]"
-              />
-            </label>
-            <label className="grid gap-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-              Email
-              <input
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="border border-[#1034b8] bg-white px-3 py-2 text-sm font-semibold text-[#111] outline-none focus:ring-2 focus:ring-[#1034b8]"
-              />
-            </label>
-            <label className="grid gap-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-              Phone
-              <input
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                className="border border-[#1034b8] bg-white px-3 py-2 text-sm font-semibold text-[#111] outline-none focus:ring-2 focus:ring-[#1034b8]"
-              />
-            </label>
-            <button className="mt-1 w-fit border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]">
-              Save (dummy)
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Full name</p>
+              <p className="mt-1 text-sm font-semibold text-[#111]">{name}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Email</p>
+              <p className="mt-1 text-sm font-semibold text-[#111]">{email}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">Phone</p>
+              <p className="mt-1 text-sm font-semibold text-[#111]">{phone}</p>
+            </div>
+            <button className="group mt-1 inline-flex w-fit items-center border border-[#f00] bg-[#f00] px-5 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]">
+              <ButtonHoverLabel label="Edit Profile" />
             </button>
           </div>
         </article>
@@ -134,11 +154,11 @@ export default function ProfilePage() {
       </section>
 
       <footer className="flex flex-wrap gap-2 p-4 md:p-6">
-        <Link href="/rewards" className="border border-[#1034b8] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]">
-          Go to points deals
+        <Link href="/rewards" className="group inline-flex items-center border border-[#1034b8] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]">
+          <ButtonHoverLabel label="Go to points deals" />
         </Link>
-        <Link href="/menu" className="border border-[#f00] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#f00]">
-          Go to menu
+        <Link href="/menu" className="group inline-flex items-center border border-[#f00] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#f00]">
+          <ButtonHoverLabel label="Go to menu" />
         </Link>
       </footer>
     </main>

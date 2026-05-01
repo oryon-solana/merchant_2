@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ButtonHoverLabel } from "../components/ButtonHoverLabel";
+import { setLoggedIn } from "../lib/auth";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("New Member");
   const [email, setEmail] = useState("new@example.com");
   const [password, setPassword] = useState("");
@@ -48,9 +52,13 @@ export default function SignUpPage() {
 
           <button
             type="button"
-            className="mt-1 w-fit border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]"
+            onClick={() => {
+              setLoggedIn(true);
+              router.push("/");
+            }}
+            className="group mt-1 inline-flex w-fit items-center border border-[#f00] bg-[#f00] px-5 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]"
           >
-            Create Account (dummy)
+            <ButtonHoverLabel label="Create Account (dummy)" />
           </button>
         </form>
 
@@ -59,9 +67,9 @@ export default function SignUpPage() {
         </p>
         <Link
           href="/signin"
-          className="mt-2 inline-block border border-[#1034b8] px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]"
+          className="group mt-2 inline-flex items-center border border-[#1034b8] px-4 py-2 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]"
         >
-          Go to Sign In
+          <ButtonHoverLabel label="Go to Sign In" />
         </Link>
       </section>
     </main>
