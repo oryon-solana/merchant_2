@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 
 interface AuthUser {
   id: string;
@@ -15,6 +22,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  setAuth: (token: string, user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -34,6 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const setAuth = useCallback((newToken: string, newUser: AuthUser) => {
+    localStorage.setItem("auth_token", newToken);
+    localStorage.setItem("auth_user", JSON.stringify(newUser));
+    setToken(newToken);
+    setUser(newUser);
+  }, []);
+
   const login = async (email: string, password: string) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -42,10 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Login failed");
-    localStorage.setItem("auth_token", data.access_token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
-    setToken(data.access_token);
-    setUser(data.user);
+    setAuth(data.access_token, data.user);
   };
 
   const register = async (email: string, password: string, name: string) => {
@@ -74,7 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, register, logout, setAuth }}
+    >
       {children}
     </AuthContext.Provider>
   );

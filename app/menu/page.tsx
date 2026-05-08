@@ -2,85 +2,61 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MaskedLineReveal } from "../components/MaskedLineReveal";
 import { ButtonHoverLabel } from "../components/ButtonHoverLabel";
-import { addToCart } from "../lib/cart";
+import { useAuth } from "../context/AuthContext";
 
-const menuItems = [
-  {
-    name: "Crispy Chicken Bites",
-    description: "Hand-breaded bites, ranch dip, extra crunch.",
-    price: "$7.99",
-    image: "/menu/crispy-chicken-bites.webp",
-  },
-  {
-    name: "Buffalo Chicken Wrap",
-    description: "Crispy strips, lettuce, pickles, spicy mayo.",
-    price: "$8.99",
-    image: "/menu/buffalo-chicken-wrap.webp",
-  },
-  {
-    name: "Grilled Chicken Sandwich",
-    description: "Toasted bun, grilled chicken, lettuce, tomato, mayo.",
-    price: "$9.29",
-    image: "/menu/chicken-grilled-sandwich.webp",
-  },
-  {
-    name: "Eggs & Bacon Waffles",
-    description: "Sweet waffles, eggs, and crispy bacon breakfast stack.",
-    price: "$8.79",
-    image: "/menu/eggs-bacon-waffles.webp",
-  },
-  {
-    name: "Value Max Combo",
-    description: "Burger, fries, nuggets, and a fountain drink.",
-    price: "$10.99",
-    image: "/menu/value-max-combo.webp",
-  },
-  {
-    name: "Loaded Fries",
-    description: "Crinkle fries, cheese sauce, bacon bits, jalapenos.",
-    price: "$6.99",
-    image: "/menu/loaded-fries.webp",
-  },
-  {
-    name: "Loaded Mac Cheese",
-    description: "Creamy cheddar pasta topped with crispy onions.",
-    price: "$7.49",
-    image: "/menu/loaded-mac-cheese.webp",
-  },
-  {
-    name: "Vanilla Mega Shake",
-    description: "Thick vanilla shake with whipped cream and cookie crumbs.",
-    price: "$5.99",
-    image: "/menu/vanilla-mega-shake.webp",
-  },
-];
+type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image_url: string;
+};
 
-type MenuItem = (typeof menuItems)[number];
-
-function toItemId(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-}
-
-function parsePrice(priceLabel: string): number {
-  return Number(priceLabel.replace(/[^0-9.]/g, ""));
+function formatIDR(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
 }
 
 export default function MenuPage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<string>(toItemId(menuItems[0].name));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/shop")
+      .then((r) => r.json())
+      .then((data: Product[]) => {
+        setProducts(data);
+        if (data.length > 0) setSelectedId(data[0].id);
+      })
+      .finally(() => setLoadingProducts(false));
+  }, []);
 
   const selectedItem = useMemo(
-    () => menuItems.find((item) => toItemId(item.name) === selectedItemId) ?? menuItems[0],
-    [selectedItemId],
+    () => products.find((p) => p.id === selectedId) ?? products[0] ?? null,
+    [selectedId, products],
   );
 
-  const openOrderModal = (item: MenuItem) => {
-    setSelectedItemId(toItemId(item.name));
+  const openOrderModal = (item: Product) => {
+    setSelectedId(item.id);
     setQuantity(1);
+    setAddError("");
+    setAddSuccess(false);
     setModalOpen(true);
   };
 
@@ -88,20 +64,31 @@ export default function MenuPage() {
     setModalOpen(false);
   };
 
-  const handleAddToOrder = () => {
-    const unitPrice = parsePrice(selectedItem.price);
-    addToCart({
-      id: toItemId(selectedItem.name),
-      name: selectedItem.name,
-      image: selectedItem.image,
-      price: unitPrice,
-      quantity,
+  const handleAddToOrder = async () => {
+    if (!selectedItem) return;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+    setAddError("");
+    setAdding(true);
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ product_id: selectedItem.id, quantity }),
     });
-    closeOrderModal();
+    setAdding(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setAddError(data.error ?? "Failed to add to cart");
+      return;
+    }
+    setAddSuccess(true);
+    setTimeout(closeOrderModal, 700);
   };
-
-  const unitPrice = parsePrice(selectedItem.price);
-  const totalPrice = unitPrice * quantity;
 
   return (
     <main className="min-h-screen w-full bg-[#f4ead5] pb-24 md:pb-8">
@@ -115,60 +102,72 @@ export default function MenuPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-1 border-b-2 border-[#f00] md:grid-cols-2">
-        {menuItems.map((item, index) => (
-          <article
-            key={item.name}
-            className={`border-r border-t border-[#f00] p-4 flex flex-col ${index % 2 === 0 ? "bg-[#fff4de]" : "bg-[#fef3c7]"}`}
-          >
-            <div className="h-40 md:h-84 relative mb-3 rounded-lg overflow-hidden border-2 border-[#1034b8]">
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 10vw, 20vw"
-                priority={index === 0}
-              />
-            </div>
-            <MaskedLineReveal
-              as="p"
-              lines={[item.name]}
-              className="font-(family-name:--font-bebas) text-2xl md:text-4xl uppercase leading-none text-[#1034b8]"
-            />
-            <MaskedLineReveal
-              as="p"
-              lines={[item.description]}
-              className="mt-2 text-xs font-bold uppercase tracking-[0.07em] text-[#1f2937]"
-            />
-            <div className="mt-4 flex items-center justify-between">
+      {loadingProducts ? (
+        <div className="p-6 text-center text-sm font-extrabold uppercase tracking-[0.08em] text-[#1034b8]">
+          Loading menu…
+        </div>
+      ) : (
+        <section className="grid grid-cols-1 border-b-2 border-[#f00] md:grid-cols-2">
+          {products.map((item, index) => (
+            <article
+              key={item.id}
+              className={`border-r border-t border-[#f00] p-4 flex flex-col ${index % 2 === 0 ? "bg-[#fff4de]" : "bg-[#fef3c7]"}`}
+            >
+              <div className="h-40 md:h-84 relative mb-3 rounded-lg overflow-hidden border-2 border-[#1034b8]">
+                <Image
+                  src={item.image_url}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority={index === 0}
+                />
+              </div>
               <MaskedLineReveal
                 as="p"
-                lines={[item.price]}
-                className="text-lg font-extrabold uppercase text-[#f00]"
+                lines={[item.name]}
+                className="font-(family-name:--font-bebas) text-2xl md:text-4xl uppercase leading-none text-[#1034b8]"
               />
-              <button
-                type="button"
-                onClick={() => openOrderModal(item)}
-                className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] hover:bg-[#dc2626] transition-colors"
-              >
-                <ButtonHoverLabel label="Add to order" className="leading-none" />
-              </button>
-            </div>
-          </article>
-        ))}
-      </section>
+              <MaskedLineReveal
+                as="p"
+                lines={[item.description]}
+                className="mt-2 text-xs font-bold uppercase tracking-[0.07em] text-[#1f2937]"
+              />
+              <div className="mt-4 flex items-center justify-between">
+                <MaskedLineReveal
+                  as="p"
+                  lines={[formatIDR(item.price)]}
+                  className="text-lg font-extrabold uppercase text-[#f00]"
+                />
+                <button
+                  type="button"
+                  onClick={() => openOrderModal(item)}
+                  className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] hover:bg-[#dc2626] transition-colors"
+                >
+                  <ButtonHoverLabel label="Add to order" className="leading-none" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
 
       <footer className="flex flex-wrap gap-2 p-4 md:p-6">
-        <Link href="/rewards" className="group inline-flex items-center border border-[#1034b8] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8] hover:bg-[#f4ead5] transition-colors">
+        <Link
+          href="/rewards"
+          className="group inline-flex items-center border border-[#1034b8] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8] hover:bg-[#f4ead5] transition-colors"
+        >
           <ButtonHoverLabel label="See points deals" />
         </Link>
-        <Link href="/" className="group inline-flex items-center border border-[#f00] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#f00] hover:bg-[#fecaca] transition-colors">
+        <Link
+          href="/"
+          className="group inline-flex items-center border border-[#f00] px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.14em] text-[#f00] hover:bg-[#fecaca] transition-colors"
+        >
           <ButtonHoverLabel label="Back home" />
         </Link>
       </footer>
 
-      {isModalOpen ? (
+      {isModalOpen && selectedItem ? (
         <div className="fixed inset-0 z-[70] grid place-items-center bg-black/55 p-4">
           <div className="w-full max-w-3xl border-2 border-[#f00] bg-[#fff4de] p-5 md:p-8">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#1034b8]">
@@ -178,23 +177,39 @@ export default function MenuPage() {
               Add Menu Item
             </h2>
 
+            {addError && (
+              <div className="mt-2 border border-[#f00] bg-[#fff0f0] px-3 py-2 text-[11px] font-bold uppercase text-[#f00]">
+                {addError}
+              </div>
+            )}
+            {addSuccess && (
+              <div className="mt-2 border border-green-600 bg-green-50 px-3 py-2 text-[11px] font-bold uppercase text-green-700">
+                Added to cart!
+              </div>
+            )}
+
             <div className="mt-4 grid gap-5 md:grid-cols-[220px_1fr] md:items-center">
               <div className="relative h-44 overflow-hidden rounded-lg border-2 border-[#1034b8] md:h-52">
-                <Image src={selectedItem.image} alt={selectedItem.name} fill className="object-cover" />
+                <Image
+                  src={selectedItem.image_url}
+                  alt={selectedItem.name}
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="grid gap-3">
                 <p className="font-(family-name:--font-bebas) text-3xl uppercase leading-none text-[#1034b8]">
                   {selectedItem.name}
                 </p>
 
-                <div className="grid gap-2  px-1 py-1">
+                <div className="grid gap-2 px-1 py-1">
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
                     Quantity
                   </p>
                   <div className="inline-flex w-fit items-center rounded-md">
                     <button
                       type="button"
-                      onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       className="rounded-full border border-[#1034b8] px-3 py-1 text-base font-black text-[#1034b8] hover:bg-[#bfdbfe]"
                     >
                       -
@@ -204,7 +219,9 @@ export default function MenuPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setQuantity((current) => current + 1)}
+                      onClick={() =>
+                        setQuantity((q) => Math.min(selectedItem.stock, q + 1))
+                      }
                       className="rounded-full border border-[#1034b8] px-3 py-1 text-base font-black text-[#1034b8] hover:bg-[#bfdbfe]"
                     >
                       +
@@ -214,12 +231,15 @@ export default function MenuPage() {
 
                 <div className="grid gap-1 bg-[#fff4de]/60 px-1 py-1">
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-                    Price per item: <span className="text-[#f00]">{selectedItem.price}</span>
+                    Price per item:{" "}
+                    <span className="text-[#f00]">
+                      {formatIDR(selectedItem.price)}
+                    </span>
                   </p>
                   <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#374151]">
                     Total:{" "}
                     <span className="text-[#f00]">
-                      ${totalPrice.toFixed(2)}
+                      {formatIDR(selectedItem.price * quantity)}
                     </span>
                   </p>
                 </div>
@@ -230,9 +250,10 @@ export default function MenuPage() {
               <button
                 type="button"
                 onClick={handleAddToOrder}
-                className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de]"
+                disabled={adding || addSuccess}
+                className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] disabled:opacity-50"
               >
-                <ButtonHoverLabel label="Add to order" />
+                <ButtonHoverLabel label={adding ? "Adding…" : "Add to order"} />
               </button>
               <button
                 type="button"

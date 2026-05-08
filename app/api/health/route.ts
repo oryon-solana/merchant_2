@@ -1,9 +1,9 @@
-import { createSupabaseClient } from '@/lib/supabase'
+import { createSupabaseAdminClient } from '@/lib/supabase'
 
 export async function GET() {
   try {
-    const supabase = createSupabaseClient()
-    const { error } = await supabase.auth.getSession()
+    const supabase = createSupabaseAdminClient()
+    const { error } = await supabase.from('users').select('id').limit(1)
 
     if (error) {
       return Response.json({ status: 'error', message: error.message }, { status: 500 })

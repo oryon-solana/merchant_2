@@ -1,8 +1,8 @@
+import bcrypt from 'bcryptjs'
 import { createSupabaseAdminClient } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   let body: { email?: string; password?: string; name?: string }
-
   try {
     body = await request.json()
   } catch {
@@ -14,33 +14,36 @@ export async function POST(request: Request) {
   if (!email || !password) {
     return Response.json({ error: 'email and password are required' }, { status: 400 })
   }
-
   if (password.length < 8) {
     return Response.json({ error: 'password must be at least 8 characters' }, { status: 400 })
   }
 
-  // Use admin client with email_confirm: true to skip email verification entirely
   const supabase = createSupabaseAdminClient()
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    user_metadata: { name },
-    email_confirm: true,
-  })
+
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('email', email)
+    .single()
+
+  if (existing) {
+    return Response.json({ error: 'Email already registered' }, { status: 400 })
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+
+  const { data: user, error } = await supabase
+    .from('users')
+    .insert({ email, name: name ?? null, password_hash: passwordHash })
+    .select('id, email, name')
+    .single()
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 400 })
+    return Response.json({ error: error.message }, { status: 500 })
   }
 
   return Response.json(
-    {
-      message: 'Registration successful.',
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        name: data.user?.user_metadata?.name,
-      },
-    },
+    { message: 'Registration successful.', user: { id: user.id, email: user.email, name: user.name } },
     { status: 201 }
   )
 }

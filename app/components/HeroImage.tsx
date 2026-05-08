@@ -6,7 +6,7 @@ export function HeroImage() {
       data-aos="fade-up"
       className="relative overflow-hidden border-b-2 border-[#f00] bg-[#dc2626] p-2"
     >
-      <div className="h-52 border border-[#f00] bg-[#1f2937] md:h-72">
+      <div className="relative h-52 border border-[#f00] bg-[#1f2937] md:h-72">
         <Image
           src="/images/food.jpg"
           alt="Sizzle restaurant interior with customers enjoying meals"

@@ -1,32 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { LogOut, ShoppingCart } from "lucide-react";
 import { ButtonHoverLabel } from "./ButtonHoverLabel";
-import { AUTH_CHANGED_EVENT, isLoggedIn, setLoggedIn } from "../lib/auth";
+import { useAuth } from "../context/AuthContext";
 
 export function NavAuthActions() {
-  const [loggedIn, setAuthState] = useState(false);
-  const [ready, setReady] = useState(false);
+  const { user, logout, isLoading } = useAuth();
 
-  useEffect(() => {
-    const sync = () => {
-      setAuthState(isLoggedIn());
-      setReady(true);
-    };
+  if (isLoading) return null;
 
-    sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener(AUTH_CHANGED_EVENT, sync);
-
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener(AUTH_CHANGED_EVENT, sync);
-    };
-  }, []);
-
-  if (!ready || !loggedIn) {
+  if (!user) {
     return (
       <>
         <Link
@@ -57,10 +41,10 @@ export function NavAuthActions() {
       </Link>
       <button
         type="button"
-        onClick={() => setLoggedIn(false)}
+        onClick={logout}
         className="group inline-flex items-center border border-[#f00] bg-transparent px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#f00] transition-colors hover:bg-[#f00] hover:text-[#fff4de]"
         aria-label="Logout"
-        title="Logout"
+        title={`Logout (${user.name ?? user.email})`}
       >
         <LogOut className="h-[1.15em] w-[1.15em]" strokeWidth={2.6} aria-hidden="true" />
       </button>
