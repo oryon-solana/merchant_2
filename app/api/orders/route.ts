@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase'
 import { getAuthUser, unauthorized } from '@/lib/auth'
+import { callEarnPoints } from '@/lib/solana'
 
 const POINTS_PER_IDR = 12000 // 1 point per 12,000 IDR spent
 
@@ -119,6 +120,23 @@ export async function POST(request: Request) {
   // 9. clear cart
   await supabase.from('cart_items').delete().eq('user_id', user.id)
 
+  // 10. mint on-chain loyalty points via smart contract (best-effort)
+  let onchainTx: string | null = null
+  try {
+    const { data: pointsRow } = await supabase
+      .from('user_points')
+      .select('wallet_address')
+      .eq('user_id', user.id)
+      .single()
+
+    if (pointsRow?.wallet_address && pointsEarned > 0) {
+      onchainTx = await callEarnPoints(pointsRow.wallet_address, total)
+    }
+  } catch (err) {
+    // non-fatal: purchase succeeds even if on-chain mint fails
+    console.error('[earn_points] on-chain call failed:', err)
+  }
+
   return Response.json(
     {
       order: {
@@ -139,6 +157,7 @@ export async function POST(request: Request) {
           pointsEarned > 0
             ? `You earned ${pointsEarned} point${pointsEarned > 1 ? 's' : ''}!`
             : `Spend at least Rp${POINTS_PER_IDR.toLocaleString('id-ID')} to earn points.`,
+        onchain_tx: onchainTx,
       },
     },
     { status: 201 }
