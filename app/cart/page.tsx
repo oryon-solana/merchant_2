@@ -29,7 +29,8 @@ function formatIDR(amount: number): string {
   }).format(amount);
 }
 
-const POINTS_PER_IDR = 12000;
+const POINTS_PER_IDR = 12000; // 1 point earned per Rp12,000 spent
+const IDR_PER_POINT = 1000;   // 1 point redeems Rp1,000
 
 const paymentMethods = [
   { id: "card", label: "Credit Card" },
@@ -37,7 +38,12 @@ const paymentMethods = [
   { id: "wallet", label: "E-Wallet" },
 ];
 
-type OrderResult = { points_earned: number; total_amount: number };
+type OrderResult = {
+  points_earned: number;
+  points_spent: number;
+  total_amount: number;
+  paid_with_points: boolean;
+};
 
 export default function CartPage() {
   const router = useRouter();
@@ -49,17 +55,23 @@ export default function CartPage() {
   const [purchasing, setPurchasing] = useState(false);
   const [orderResult, setOrderResult] = useState<OrderResult | null>(null);
   const [error, setError] = useState("");
+  const [userPoints, setUserPoints] = useState<number>(0);
 
   const fetchCart = useCallback(async () => {
     if (!token) return;
     setLoading(true);
-    const res = await fetch("/api/cart", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
+    const [cartRes, pointsRes] = await Promise.all([
+      fetch("/api/cart", { headers: { Authorization: `Bearer ${token}` } }),
+      fetch("/api/points", { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
+    if (cartRes.ok) {
+      const data = await cartRes.json();
       setItems(data.items ?? []);
       setTotal(data.total ?? 0);
+    }
+    if (pointsRes.ok) {
+      const data = await pointsRes.json();
+      setUserPoints(data.total_points ?? 0);
     }
     setLoading(false);
   }, [token]);
@@ -74,6 +86,8 @@ export default function CartPage() {
   }, [authLoading, token, fetchCart, router]);
 
   const pointsToEarn = useMemo(() => Math.floor(total / POINTS_PER_IDR), [total]);
+  const pointsCost = useMemo(() => Math.ceil(total / IDR_PER_POINT), [total]);
+  const canPayWithPoints = userPoints >= pointsCost && pointsCost > 0;
 
   const updateQuantity = async (itemId: string, newQty: number) => {
     if (!token || newQty < 1) return;
@@ -126,7 +140,31 @@ export default function CartPage() {
     }
     setOrderResult({
       points_earned: data.order.points_earned,
+      points_spent: 0,
       total_amount: data.order.total_amount,
+      paid_with_points: false,
+    });
+  };
+
+  const handlePayWithPoints = async () => {
+    if (!token || items.length === 0 || !canPayWithPoints) return;
+    setError("");
+    setPurchasing(true);
+    const res = await fetch("/api/orders/redeem", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    setPurchasing(false);
+    if (!res.ok) {
+      setError(data.error ?? "Redeem failed");
+      return;
+    }
+    setOrderResult({
+      points_earned: 0,
+      points_spent: data.order.points_spent,
+      total_amount: data.order.total_amount,
+      paid_with_points: true,
     });
   };
 
@@ -152,17 +190,26 @@ export default function CartPage() {
           </h1>
           <div className="mt-4 grid gap-2">
             <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-              Total paid:{" "}
+              Total:{" "}
               <span className="text-[#f00]">
                 {formatIDR(orderResult.total_amount)}
               </span>
             </p>
-            <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-              Points earned:{" "}
-              <span className="text-[#1034b8]">
-                {orderResult.points_earned} pts
-              </span>
-            </p>
+            {orderResult.paid_with_points ? (
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
+                Paid with:{" "}
+                <span className="text-[#1034b8]">
+                  {orderResult.points_spent} pts
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
+                Points earned:{" "}
+                <span className="text-[#1034b8]">
+                  {orderResult.points_earned} pts
+                </span>
+              </p>
+            )}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link
@@ -231,11 +278,8 @@ export default function CartPage() {
                   {formatIDR(item.product.price)} each
                 </p>
                 <p className="mt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#1034b8]">
-                  Earn{" "}
-                  {Math.floor(
-                    (item.product.price * item.quantity) / POINTS_PER_IDR,
-                  )}{" "}
-                  pts
+                  {Math.ceil((item.product.price * item.quantity) / IDR_PER_POINT)} pts to redeem ·{" "}
+                  earn {Math.floor((item.product.price * item.quantity) / POINTS_PER_IDR)} pts
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -275,9 +319,17 @@ export default function CartPage() {
           <p className="text-xl font-black uppercase text-[#f00]">
             Subtotal: {formatIDR(total)}
           </p>
-          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#1034b8]">
-            Rewards on this order: {pointsToEarn} pts
-          </p>
+          <div className="flex flex-wrap gap-4 text-sm font-black uppercase tracking-[0.08em]">
+            <p className="text-[#1034b8]">
+              Earn: {pointsToEarn} pts
+            </p>
+            <p className="text-[#374151]">
+              Redeem cost: {pointsCost} pts
+            </p>
+            <p className={canPayWithPoints ? "text-green-700" : "text-[#f00]"}>
+              Your balance: {userPoints} pts
+            </p>
+          </div>
           {error && (
             <p className="text-[11px] font-bold uppercase text-[#f00]">
               {error}
@@ -314,6 +366,21 @@ export default function CartPage() {
             className="group inline-flex items-center border border-[#f00] bg-[#f00] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] disabled:opacity-50"
           >
             <ButtonHoverLabel label={purchasing ? "Processing…" : "Purchase"} />
+          </button>
+          <button
+            type="button"
+            onClick={handlePayWithPoints}
+            disabled={purchasing || items.length === 0 || !canPayWithPoints}
+            title={
+              !canPayWithPoints
+                ? `Need ${pointsCost} pts, you have ${userPoints}`
+                : `Pay using ${pointsCost} of your ${userPoints} pts`
+            }
+            className="group inline-flex items-center border border-[#1034b8] bg-[#1034b8] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#fff4de] disabled:opacity-40"
+          >
+            <ButtonHoverLabel
+              label={purchasing ? "Processing…" : `Pay with ${pointsCost} pts`}
+            />
           </button>
           <button
             type="button"
