@@ -1,7 +1,8 @@
 import { createSupabaseAdminClient } from '@/lib/supabase'
 import { getAuthUser, unauthorized } from '@/lib/auth'
 
-const IDR_PER_POINT = 1000 // 1 point = Rp1,000
+const IDR_PER_POINT = 1000   // 1 point redeems Rp1,000
+const POINTS_PER_IDR = 12000 // 1 point earned per Rp12,000 spent
 
 // POST /api/orders/redeem — checkout using points instead of money
 export async function POST(request: Request) {
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
   }, 0)
 
   const pointsCost = Math.ceil(total / IDR_PER_POINT)
+  const pointsEarned = Math.floor(total / POINTS_PER_IDR)
 
   // 4. check user has enough points
   const { data: pointsRow } = await supabase
@@ -57,13 +59,13 @@ export async function POST(request: Request) {
     )
   }
 
-  // 5. create order (payment_method = 'points', no points earned)
+  // 5. create order
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
       user_id: user.id,
       total_amount: total,
-      points_earned: 0,
+      points_earned: pointsEarned,
       points_spent: pointsCost,
       payment_method: 'points',
     })
@@ -97,21 +99,33 @@ export async function POST(request: Request) {
       .eq('id', product.id)
   }
 
-  // 8. deduct points
-  const newTotal = currentPoints - pointsCost
+  // 8. deduct spent points, add earned points
+  const newTotal = currentPoints - pointsCost + pointsEarned
   await supabase
     .from('user_points')
     .update({ total_points: newTotal, updated_at: new Date().toISOString() })
     .eq('user_id', user.id)
 
-  // 9. record point transaction
-  await supabase.from('point_transactions').insert({
-    user_id: user.id,
-    order_id: order.id,
-    points: -pointsCost,
-    type: 'redeemed',
-    note: `Redeemed for order #${order.id.slice(0, 8)}`,
-  })
+  // 9. record both transactions
+  const transactions = [
+    {
+      user_id: user.id,
+      order_id: order.id,
+      points: -pointsCost,
+      type: 'redeemed',
+      note: `Redeemed for order #${order.id.slice(0, 8)}`,
+    },
+  ]
+  if (pointsEarned > 0) {
+    transactions.push({
+      user_id: user.id,
+      order_id: order.id,
+      points: pointsEarned,
+      type: 'earned',
+      note: `Earned from order #${order.id.slice(0, 8)}`,
+    })
+  }
+  await supabase.from('point_transactions').insert(transactions)
 
   // 10. clear cart
   await supabase.from('cart_items').delete().eq('user_id', user.id)
@@ -122,7 +136,7 @@ export async function POST(request: Request) {
         id: order.id,
         total_amount: total,
         points_spent: pointsCost,
-        points_earned: 0,
+        points_earned: pointsEarned,
         status: order.status,
         items: orderItems.map((i) => ({
           product_name: i.product_name,
@@ -132,8 +146,9 @@ export async function POST(request: Request) {
       },
       points_summary: {
         spent: pointsCost,
+        earned: pointsEarned,
         remaining: newTotal,
-        message: `You used ${pointsCost} point${pointsCost > 1 ? 's' : ''} to pay!`,
+        message: `Used ${pointsCost} pts to pay${pointsEarned > 0 ? `, earned ${pointsEarned} pts back!` : '!'}`,
       },
     },
     { status: 201 }

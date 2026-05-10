@@ -161,7 +161,7 @@ export default function CartPage() {
       return;
     }
     setOrderResult({
-      points_earned: 0,
+      points_earned: data.order.points_earned,
       points_spent: data.order.points_spent,
       total_amount: data.order.total_amount,
       paid_with_points: true,
@@ -196,17 +196,27 @@ export default function CartPage() {
               </span>
             </p>
             {orderResult.paid_with_points ? (
-              <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
-                Paid with:{" "}
-                <span className="text-[#1034b8]">
-                  {orderResult.points_spent} pts
-                </span>
-              </p>
+              <>
+                <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
+                  Paid with:{" "}
+                  <span className="text-[#1034b8]">
+                    {orderResult.points_spent} pts
+                  </span>
+                </p>
+                {orderResult.points_earned > 0 && (
+                  <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
+                    Points earned:{" "}
+                    <span className="text-[#1034b8]">
+                      +{orderResult.points_earned} pts
+                    </span>
+                  </p>
+                )}
+              </>
             ) : (
               <p className="text-sm font-extrabold uppercase tracking-[0.08em] text-[#374151]">
                 Points earned:{" "}
                 <span className="text-[#1034b8]">
-                  {orderResult.points_earned} pts
+                  +{orderResult.points_earned} pts
                 </span>
               </p>
             )}
