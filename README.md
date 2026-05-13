@@ -1,16 +1,16 @@
-# Gourou — Merchant Dummy for Oryon Solana Points Exchange
+# Sizzle — Merchant Dummy for Oryon Solana Points Exchange
 
-Gourou adalah aplikasi merchant dummy berbasis Next.js yang mensimulasikan ekosistem loyalty points terintegrasi dengan **Oryon** di Solana blockchain. Pelanggan berbelanja, mendapatkan points, dan dapat menukar points tersebut — sementara di balik layar, points dicetak sebagai SPL Token on-chain melalui smart contract Oryon.
+Sizzle is a dummy merchant application built with Next.js that simulates a loyalty points ecosystem integrated with **Oryon** on the Solana blockchain. Customers shop, earn points, and can exchange those points — while behind the scenes, points are minted as SPL Tokens on-chain via the Oryon smart contract.
 
 ---
 
-## Arsitektur Sistem
+## System Architecture
 
 ```
-Pelanggan (Browser)
+Customer (Browser)
        │
        ▼
-Next.js App (Gourou)
+Next.js App (Sizzle)
   ├── Frontend (App Router, React 19)
   ├── API Routes (auth, products, cart, orders, points)
   └── Backend Libs
@@ -22,20 +22,20 @@ Next.js App (Gourou)
                               SPL Token Mint (Points)
 ```
 
-### Alur Points (End-to-End)
+### Points Flow (End-to-End)
 
-1. Pelanggan login → menghubungkan Phantom Wallet di halaman **Profile**
-2. Pelanggan browsing menu → tambah ke cart → **Checkout**
-3. Server menghitung points: `total_belanja_IDR ÷ 12.000 = points_earned`
-4. Points disimpan di Supabase (`user_points`, `point_transactions`)
-5. Server memanggil instruksi **`earn_points`** pada Oryon smart contract → SPL Token dicetak ke wallet pelanggan (best-effort, non-fatal)
-6. Pelanggan bisa melihat saldo di halaman **Rewards** dan menukar points
+1. Customer logs in → connects Phantom Wallet on the **Profile** page
+2. Customer browses the menu → adds to cart → **Checkout**
+3. Server calculates points: `total_spend_IDR ÷ 12,000 = points_earned`
+4. Points are saved in Supabase (`user_points`, `point_transactions`)
+5. Server calls the **`earn_points`** instruction on the Oryon smart contract → SPL Tokens are minted to the customer's wallet (best-effort, non-fatal)
+6. Customer can view their balance on the **Rewards** page and exchange points
 
 ---
 
 ## Tech Stack
 
-| Layer | Teknologi |
+| Layer | Technology |
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind CSS v4, Framer Motion, AOS |
@@ -46,21 +46,21 @@ Next.js App (Gourou)
 
 ---
 
-## Struktur Halaman
+## Page Structure
 
-| Route | Deskripsi | Auth? |
+| Route | Description | Auth? |
 |---|---|---|
-| `/` | Landing page (hero, menu tiles, redeem section) | Tidak |
-| `/menu` | Browse & pilih menu (ambil dari `/api/shop`) | Tidak |
-| `/cart` | Lihat keranjang, ubah quantity, checkout | Ya |
-| `/orders` | Riwayat pesanan dan points yang diperoleh | Ya |
-| `/orders/[id]` | Detail satu pesanan | Ya |
-| `/rewards` | Tukar points dengan menu spesial | Ya |
-| `/profile` | Lihat saldo points, hubungkan Phantom Wallet, simulasi konversi points ke e-wallet | Ya |
-| `/signin` | Login dengan email/password | — |
-| `/signup` | Register akun baru | — |
-| `/login` | Alias login | — |
-| `/register` | Alias register | — |
+| `/` | Landing page (hero, menu tiles, redeem section) | No |
+| `/menu` | Browse & select menu (fetched from `/api/shop`) | No |
+| `/cart` | View cart, change quantity, checkout | Yes |
+| `/orders` | Order history and points earned | Yes |
+| `/orders/[id]` | Single order detail | Yes |
+| `/rewards` | Exchange points for special menu items | Yes |
+| `/profile` | View points balance, connect Phantom Wallet, simulate points-to-e-wallet conversion | Yes |
+| `/signin` | Login with email/password | — |
+| `/signup` | Register a new account | — |
+| `/login` | Login alias | — |
+| `/register` | Register alias | — |
 | `/auth/callback` | Google OAuth callback | — |
 
 ---
@@ -69,17 +69,17 @@ Next.js App (Gourou)
 
 ### Auth
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/register` | Daftar akun baru (email, password, name) |
-| POST | `/api/auth/login` | Login → mendapat JWT access_token (7 hari) |
-| POST | `/api/auth/logout` | Logout (client hapus token) |
-| GET | `/api/auth/me` | Ambil profil user dari token |
+| POST | `/api/auth/register` | Register new account (email, password, name) |
+| POST | `/api/auth/login` | Login → receive JWT access_token (7 days) |
+| POST | `/api/auth/logout` | Logout (client deletes token) |
+| GET | `/api/auth/me` | Fetch user profile from token |
 | POST | `/api/auth/refresh` | Refresh token |
-| GET | `/api/auth/google` | Redirect ke Google OAuth |
-| GET | `/api/auth/google/callback` | Callback Google OAuth |
+| GET | `/api/auth/google` | Redirect to Google OAuth |
+| GET | `/api/auth/google/callback` | Google OAuth callback |
 
-Semua endpoint yang membutuhkan auth menggunakan header:
+All endpoints requiring auth use the header:
 ```
 Authorization: Bearer <access_token>
 ```
@@ -88,36 +88,36 @@ Authorization: Bearer <access_token>
 
 ### Products & Shop
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/shop` | Daftar produk publik (tanpa auth), dipakai halaman `/menu` |
-| GET | `/api/products` | Daftar produk milik merchant yang login |
-| POST | `/api/products` | Tambah produk baru |
-| GET | `/api/products/[id]` | Detail satu produk |
-| PATCH/DELETE | `/api/products/[id]` | Update / hapus produk |
+| GET | `/api/shop` | Public product list (no auth required), used by `/menu` page |
+| GET | `/api/products` | Product list owned by the logged-in merchant |
+| POST | `/api/products` | Add a new product |
+| GET | `/api/products/[id]` | Single product detail |
+| PATCH/DELETE | `/api/products/[id]` | Update / delete product |
 
 ---
 
 ### Cart
 
-| Method | Endpoint | Body | Deskripsi |
+| Method | Endpoint | Body | Description |
 |---|---|---|---|
-| GET | `/api/cart` | — | Lihat isi keranjang + total harga |
-| POST | `/api/cart` | `{ product_id, quantity }` | Tambah item (upsert jika sudah ada) |
-| PATCH | `/api/cart/[id]` | `{ quantity }` | Update quantity item |
-| DELETE | `/api/cart/[id]` | — | Hapus item dari keranjang |
+| GET | `/api/cart` | — | View cart contents + total price |
+| POST | `/api/cart` | `{ product_id, quantity }` | Add item (upsert if already exists) |
+| PATCH | `/api/cart/[id]` | `{ quantity }` | Update item quantity |
+| DELETE | `/api/cart/[id]` | — | Remove item from cart |
 
 ---
 
 ### Orders (Checkout)
 
-| Method | Endpoint | Deskripsi |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/orders` | Riwayat pesanan user |
-| POST | `/api/orders` | **Checkout** — bayar dari cart, hitung & mint points, kosongkan cart |
-| GET | `/api/orders/[id]` | Detail pesanan tertentu |
+| GET | `/api/orders` | User order history |
+| POST | `/api/orders` | **Checkout** — pay from cart, calculate & mint points, clear cart |
+| GET | `/api/orders/[id]` | Specific order detail |
 
-**Response checkout (`POST /api/orders`):**
+**Checkout response (`POST /api/orders`):**
 ```json
 {
   "order": {
@@ -136,28 +136,28 @@ Authorization: Bearer <access_token>
 }
 ```
 
-`onchain_tx` adalah signature transaksi Solana. Bernilai `null` jika user belum menghubungkan wallet atau on-chain mint gagal (pesanan tetap berhasil).
+`onchain_tx` is the Solana transaction signature. It is `null` if the user has not connected a wallet or if the on-chain mint failed (the order still succeeds).
 
 ---
 
 ### Points & Wallet
 
-| Method | Endpoint | Body | Deskripsi |
+| Method | Endpoint | Body | Description |
 |---|---|---|---|
-| GET | `/api/points` | — | Saldo points, wallet address, riwayat transaksi |
-| PATCH | `/api/points` | `{ wallet_address }` | Simpan / update Solana wallet address |
-| GET | `/api/wallet/[address]` | — | Lookup points berdasarkan wallet address |
-| PATCH | `/api/wallet/[address]` | `{ points }` | Set ulang saldo points (untuk testing/integrasi Oryon) |
+| GET | `/api/points` | — | Points balance, wallet address, transaction history |
+| PATCH | `/api/points` | `{ wallet_address }` | Save / update Solana wallet address |
+| GET | `/api/wallet/[address]` | — | Look up points by wallet address |
+| PATCH | `/api/wallet/[address]` | `{ points }` | Reset points balance (for testing/Oryon integration) |
 
 ---
 
-## Integrasi Oryon Solana
+## Oryon Solana Integration
 
 File: [lib/solana.ts](lib/solana.ts)
 
-### Cara Kerja
+### How It Works
 
-Setiap checkout, server memanggil instruksi **`earn_points`** pada Oryon Anchor program:
+On every checkout, the server calls the **`earn_points`** instruction on the Oryon Anchor program:
 
 ```
 Merchant Keypair (server-side)
@@ -165,22 +165,22 @@ Merchant Keypair (server-side)
         ▼
 Instruction: earn_points(spend_amount_idr: u64)
         │
-Accounts yang diperlukan:
+Required accounts:
   ├── merchantPDA        (derived: ["merchant", merchantAuthority])
-  ├── pointsMint         (SPL Token mint milik Oryon)
-  ├── userTokenAccount   (ATA milik pelanggan)
-  ├── user               (pubkey pelanggan)
+  ├── pointsMint         (SPL Token mint owned by Oryon)
+  ├── userTokenAccount   (customer's ATA)
+  ├── user               (customer pubkey)
   ├── merchantAuthority  (signer = server keypair)
   ├── TOKEN_PROGRAM_ID
   ├── ASSOCIATED_TOKEN_PROGRAM_ID
   └── SystemProgram
 ```
 
-Instruksi ini mencetak SPL Token loyalty points langsung ke **Associated Token Account** milik pelanggan.
+This instruction mints SPL Token loyalty points directly to the customer's **Associated Token Account**.
 
 ### Environment Variables
 
-Buat file `.env.local` di root project:
+Create a `.env.local` file in the project root:
 
 ```env
 # Supabase
@@ -189,9 +189,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # JWT
-JWT_SECRET=ganti-dengan-secret-yang-kuat
+JWT_SECRET=replace-with-a-strong-secret
 
-# Google OAuth (opsional)
+# Google OAuth (optional)
 GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-xxxx
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -203,14 +203,14 @@ MERCHANT_PRIVATE_KEY=<bs58_encoded_64byte_secret_key>
 SOLANA_RPC_URL=https://api.devnet.solana.com
 ```
 
-> **Catatan keamanan:** `MERCHANT_PRIVATE_KEY` adalah private key merchant yang menandatangani transaksi on-chain. Jangan pernah expose ke client-side. Variabel ini hanya diakses di server (tidak ada prefix `NEXT_PUBLIC_`).
+> **Security note:** `MERCHANT_PRIVATE_KEY` is the merchant's private key used to sign on-chain transactions. Never expose it to the client side. This variable is only accessed server-side (no `NEXT_PUBLIC_` prefix).
 
 ---
 
 ## Database Schema (Supabase)
 
 ```sql
--- Tabel utama
+-- Main tables
 users           (id, email, name, password_hash, created_at)
 products        (id, user_id, name, description, price, stock, image_url, created_at)
 cart_items      (id, user_id, product_id, quantity, created_at)
@@ -220,31 +220,31 @@ user_points     (user_id, total_points, wallet_address, updated_at)
 point_transactions (id, user_id, order_id, points, type, note, created_at)
 ```
 
-**Kolom penting:**
-- `user_points.wallet_address` — Solana wallet pubkey pelanggan (base58). Diisi via halaman Profile menggunakan Phantom Wallet.
+**Key columns:**
+- `user_points.wallet_address` — customer's Solana wallet pubkey (base58). Set via the Profile page using Phantom Wallet.
 - `point_transactions.type` — `'earned'` | `'redeemed'`
 - `orders.status` — default `'pending'`
 
 ---
 
-## Kalkulasi Points
+## Points Calculation
 
 ```
-1 point = setiap Rp 12.000 yang dibelanjakan
-points_earned = floor(total_IDR / 12.000)
+1 point = every Rp 12,000 spent
+points_earned = floor(total_IDR / 12,000)
 ```
 
-Contoh: belanja Rp 75.000 → dapat **6 points**.
+Example: spend Rp 75,000 → earn **6 points**.
 
 ---
 
-## Halaman Profile — Fitur Utama
+## Profile Page — Key Features
 
-- **Lihat saldo points** (dari `/api/points`)
-- **Hubungkan Phantom Wallet** → menyimpan wallet address ke Supabase → points berikutnya akan di-mint on-chain
-- **Simulasi konversi points ke e-wallet** (GoPay, OVO, ShopeePay, DANA) — hanya tampilan, tidak ada transaksi nyata
+- **View points balance** (from `/api/points`)
+- **Connect Phantom Wallet** → saves wallet address to Supabase → future points will be minted on-chain
+- **Simulate points-to-e-wallet conversion** (GoPay, OVO, ShopeePay, DANA) — display only, no real transactions
 
-Rate konversi points ke IDR (simulasi):
+Points-to-IDR conversion rates (simulation):
 
 | E-Wallet | Rate per point |
 |---|---|
@@ -255,48 +255,48 @@ Rate konversi points ke IDR (simulasi):
 
 ---
 
-## Menjalankan Secara Lokal
+## Running Locally
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Salin dan isi environment variables
+# 2. Copy and fill in environment variables
 cp .env.example .env.local
-# edit .env.local sesuai konfigurasi Supabase & Solana
+# edit .env.local with your Supabase & Solana configuration
 
-# 3. Jalankan development server
+# 3. Start the development server
 npm run dev
 ```
 
-Buka [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
-# Build production
+# Production build
 npm run build
 npm start
 ```
 
 ---
 
-## Alur Penggunaan (Demo Flow)
+## Usage Flow (Demo Flow)
 
 ```
-1. Buka /signup → buat akun
-2. Login di /signin
-3. Buka /profile → klik "Connect Phantom" → izinkan Phantom → wallet tersimpan
-4. Buka /menu → pilih menu → tambah ke cart
-5. Buka /cart → klik Checkout
-   └── Server mencetak points ke Phantom Wallet via Oryon smart contract
-6. Buka /orders → lihat pesanan + points yang diperoleh + onchain_tx signature
-7. Buka /rewards → tukar points dengan menu spesial
+1. Open /signup → create an account
+2. Login at /signin
+3. Open /profile → click "Connect Phantom" → approve Phantom → wallet saved
+4. Open /menu → select items → add to cart
+5. Open /cart → click Checkout
+   └── Server mints points to Phantom Wallet via Oryon smart contract
+6. Open /orders → view order + points earned + onchain_tx signature
+7. Open /rewards → exchange points for special menu items
 ```
 
 ---
 
-## Catatan Integrasi Oryon
+## Oryon Integration Notes
 
-- On-chain mint bersifat **best-effort**: jika transaksi Solana gagal (RPC error, saldo SOL merchant habis, dsb.), pesanan tetap berhasil dan points tetap tersimpan di Supabase.
-- Discriminator instruksi `earn_points` menggunakan standar Anchor: `sha256("global:earn_points")[0:8]` = `[75, 160, 182, 236, 70, 39, 168, 6]`.
-- Merchant keypair perlu memiliki cukup SOL untuk membayar fee transaksi.
-- Endpoint `PATCH /api/wallet/[address]` dapat digunakan oleh Oryon untuk sinkronisasi saldo on-chain kembali ke database.
+- On-chain minting is **best-effort**: if the Solana transaction fails (RPC error, merchant SOL balance depleted, etc.), the order still succeeds and points are still saved in Supabase.
+- The `earn_points` instruction discriminator follows the Anchor standard: `sha256("global:earn_points")[0:8]` = `[75, 160, 182, 236, 70, 39, 168, 6]`.
+- The merchant keypair needs sufficient SOL to pay transaction fees.
+- The `PATCH /api/wallet/[address]` endpoint can be used by Oryon to sync on-chain balances back to the database.
